@@ -1,0 +1,163 @@
+
+Estatística Experimental em Ensaios Agropecuários
+--
+Aula 1 
+-
+
+-
+Análise de variância
+-
+Estudo de Delineamentos experimentais
+-
+Análise de variância Delineamento Inteiramente Causalizado
+-
+Análise de variância para Blocos Qualitativo
+
+--
+
+
+Pacotes para Estatística Experimental e entrada de dados
+```{r}
+library(ExpDes.pt)
+library(gdata)
+library(agricolae)
+```
+
+--
+Entrada de dados
+-
+Como arquivo de texto
+```{r}
+dados<-read.table("dados_teste.csv", header=TRUE,sep=",")
+```
+
+Como planilha: vantagem de usar caracteres especiais sem dificultar a codificação,caso haja, usar este chunk inteiro com Ctrl+shift+enter
+```{r}
+dados <- read.xls("dados_teste.xls",header = TRUE, dec = ",")
+#dados$Local<-iconv(dados$Local, "latin1", "UTF-8")
+```
+
+Anexando os dados para que possamos chamar as variáveis pela label de cada variável 
+```{r}
+attach(dados)
+```
+
+Condionaremos os dado num dataframe para que posso comportar tanto valores numéricos, inteiros e strings.
+```{r}
+dados=data.frame(dados)
+```
+
+Entendendo os dados como vetores e coordenadas
+```{r}
+dados$Supress.10
+Supress.10
+dados[3,3]
+dados$Supress.10[3]
+dados[3,3]==dados$Supress.10[3]
+
+
+```
+
+-
+Vamos considerar num primeiro momento, que todos os dados são fatores e serão comparados segundo sua média : comparações multiplas
+
+Fator : Note que com a forma que os dados foram tabelados, é preciso criar vetores com as variáveis basicas e as explicativas
+```{r}
+TratamentoA<-c(rep("Placebo",5))
+TratamentoB<-c(rep("D.unica",5))
+TratamentoC<-c(rep("D,dupla",5))
+
+Trat<-c(TratamentoA,TratamentoB,TratamentoC)
+
+```
+
+variáveis respostas, foram determinadas aqui como sendo em blocos, em que cada blocagem, haveriam cinco
+parcelas para cada fator, assim, as avaliações podem compor uma média, o intuito dessa forma de delineamento
+é aumentar o grau de liberdade do resíduo para observar a sua variabilidade conforme modifcamos o delineamento
+
+
+Variável Explicativas, note que aqui desconsideramos propositalmente a variação das AVALIAÇÕES
+```{r}
+Trat<-c(TratamentoA,TratamentoB,TratamentoC)
+```
+
+Separademante trabalhamos com as variáveis básicas
+```{r}
+Y7.dias<-(dados[,3])
+Y14.dias<-(dados[,4])
+Y21.dias<-(dados[,5])
+
+```
+
+
+Blocos tabulados como numéricos: mudar para fatores
+```{r}
+Blocos<-as.factor(dados$Blocos)
+```
+
+Tabela de análise de Variancia : Criar um modelo
+Neste caso será um modelo basico, linear com efeitos aditivos - DBC
+```{r}
+
+Modelo.1<-lm(Y7.dias~Trat + Blocos)
+anova(Modelo.1)
+```
+Modelo basico, linear com efeitos aditivos - DIC
+```{r}
+
+Modelo.2<-lm(Y7.dias~Trat)
+anova(Modelo.2)
+```
+
+-
+DELINEAMENTO EM BLOCOS CASUALIZADOS
+--
+
+10 dias
+```{r}
+dbc(Trat, Blocos, Y7.dias, quali = TRUE, mcomp = "tukey", nl=FALSE, hvar='oneillmathews', sigT = 0.05, sigF = 0.05)
+```
+20 dias
+```{r}
+dbc(Trat, Blocos, Y14.dias, quali = TRUE, mcomp = "tukey", nl=FALSE,hvar='oneillmathews', sigT = 0.05, sigF = 0.05)
+```
+30  dias
+```{r}
+dbc(Trat, Blocos, Y21.dias, quali = TRUE, mcomp = "tukey", nl=FALSE,hvar='oneillmathews', sigT = 0.05, sigF = 0.05)
+```
+
+
+DELINEAMENTO INTEIRAMENTE CASUALIZADOS
+--
+
+10 dias
+```{r}
+dic(Trat, Y7.dias, quali = TRUE, mcomp = "tukey", nl=FALSE,
+hvar='oneillmathews', sigT = 0.05, sigF = 0.05)
+```
+20 dias
+```{r}
+dic(Trat,Y14.dias, quali = TRUE, mcomp = "tukey", nl=FALSE,
+hvar='oneillmathews', sigT = 0.05, sigF = 0.05)
+```
+30 dias
+```{r}
+dic(Trat,Y21.dias, quali = TRUE, mcomp = "tukey", nl=FALSE,
+hvar='oneillmathews', sigT = 0.05, sigF = 0.05)
+    
+```
+
+
+Podemos também usar a função HSD do pacote agricolae para DIC
+```{r}
+a<-(HSD.test(Y21.dias, Trat, 8, 626.27, alpha = 0.05, group=TRUE, main = NULL, 
+unbalanced=FALSE,console=TRUE))
+
+```
+
+E um gráfico simples de DMS - Diferença mínima significativa a 5%
+```{r}
+plot(a,xlab="Tratamentos", ylab="Variável Básica", main="Grupos e intervalos de DMS", sub=" Tukey ao nível de 5%")
+```
+
+
